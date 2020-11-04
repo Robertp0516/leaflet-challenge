@@ -1,23 +1,6 @@
 // Store our API endpoint inside queryUrl
 var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson";
 
-function chooseColor(borough) {
-    switch (borough) {
-    case "Brooklyn":
-      return "yellow";
-    case "Bronx":
-      return "red";
-    case "Manhattan":
-      return "orange";
-    case "Queens":
-      return "green";
-    case "Staten Island":
-      return "purple";
-    default:
-      return "black";
-    }
-  }
-
 // Perform a GET request to the query URL
 d3.json(queryUrl, function(data) {
     // Once we get a response, send the data.features object to the createFeatures function
@@ -37,7 +20,19 @@ d3.json(queryUrl, function(data) {
     // Create a GeoJSON layer containing the features array on the earthquakeData object
     // Run the onEachFeature function once for each piece of data in the array
     var earthquakes = L.geoJSON(earthquakeData, {
-      onEachFeature: onEachFeature
+      
+      onEachFeature: onEachFeature,
+      pointToLayer: function (features,latlng){
+          var geoJSONMarker = {
+              radius: markerSize(features.properties.mag),
+              fillColor: fillColor(features.properties.mag),
+              color:"green",
+              weight: 0.6,
+              opacity: 0.5,
+              fillOpacity: 0.8,
+          };
+        return L.circleMarker(latlng,geoJSONMarker);
+      },
     });
   
     // Sending our earthquakes layer to the createMap function
@@ -89,5 +84,25 @@ d3.json(queryUrl, function(data) {
     L.control.layers(baseMaps, overlayMaps, {
       collapsed: false
     }).addTo(myMap);
+
+    function fillColor(mag) {
+        switch(true){
+            case mag >= 5.0:
+                return 'red';
+            case mag >= 4.0:
+                return 'orange';
+            case mag >=3.0:
+                return 'yellow';
+            case mag >=2.0:
+                return 'blue';
+            case mag >=1.0:
+                return 'green';
+            default:
+                return 'black';
+        };
+    };
+    function markerSize(mag){
+        return mag *2
+    }
   }
   
