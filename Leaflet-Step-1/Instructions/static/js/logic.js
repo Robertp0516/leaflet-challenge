@@ -1,6 +1,25 @@
 // Store our API endpoint inside queryUrl
 var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson";
 
+function chooseColor(mag) {
+    switch(mag){
+        case mag >= 5.0:
+            return 'red';
+        case mag >= 4.0:
+            return 'orange';
+        case mag >=3.0:
+            return 'yellow';
+        case mag >=2.0:
+            return 'blue';
+        case mag >=1.0:
+            return 'green';
+        case mag < 1.0:
+            return 'black';
+    };
+};
+function markerSize(mag){
+    return mag *2
+}
 // Perform a GET request to the query URL
 d3.json(queryUrl, function(data) {
     // Once we get a response, send the data.features object to the createFeatures function
@@ -14,7 +33,7 @@ d3.json(queryUrl, function(data) {
     function onEachFeature(feature, layer) {
       
       layer.bindPopup("<h3>" + feature.properties.place +
-        "</h3><hr><p>" + new Date(feature.properties.time) + "</p>");
+        "</h3><hr><p>" + new Date(feature.properties.time) + "<br> Magnitude: " + feature.properties.mag + "</p>");
     }
   
     // Create a GeoJSON layer containing the features array on the earthquakeData object
@@ -22,11 +41,9 @@ d3.json(queryUrl, function(data) {
     var earthquakes = L.geoJSON(earthquakeData, {
       
       onEachFeature: onEachFeature,
-      pointToLayer: function (features,latlng){
+      pointToLayer: function (feature,latlng){
           var geoJSONMarker = {
-              radius: markerSize(features.properties.mag),
-              fillColor: fillColor(features.properties.mag),
-              color:"green",
+              fillcolor: chooseColor(feature.properties.mag),
               weight: 0.6,
               opacity: 0.5,
               fillOpacity: 0.8,
@@ -84,25 +101,21 @@ d3.json(queryUrl, function(data) {
     L.control.layers(baseMaps, overlayMaps, {
       collapsed: false
     }).addTo(myMap);
+    var legend = L.control({ position: 'bottomright' });
 
-    function fillColor(mag) {
-        switch(true){
-            case mag >= 5.0:
-                return 'red';
-            case mag >= 4.0:
-                return 'orange';
-            case mag >=3.0:
-                return 'yellow';
-            case mag >=2.0:
-                return 'blue';
-            case mag >=1.0:
-                return 'green';
-            default:
-                return 'black';
-        };
+    legend.onAdd = function () {
+        var div = L.DomUtil.create('div', 'legend'),
+            magnitude = [0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            labels = [];
+        // loop through our magnitude intervals and generate a label with a colored square for each interval
+        div.innerHTML ='<div><b>Earthquake <br/> Magnitude</b></div';
+        for (var i = 0; i < magnitude.length; i++) {
+            div.innerHTML += '<i style= "background:' + chooseColor(magnitude[i]) + '"></i> ' +
+            magnitude[i] + (magnitude[i + 1] ? '&ndash;' + magnitude[i + 1] + '<br>' : '+');
+        }
+        return div;
     };
-    function markerSize(mag){
-        return mag *2
-    }
-  }
+    legend.addTo(myMap);
+    
+  };
   
